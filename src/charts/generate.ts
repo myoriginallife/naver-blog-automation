@@ -19,8 +19,9 @@ export async function renderChart(spec: ChartSpec, outPath: string): Promise<voi
     width: WIDTH,
     height: HEIGHT,
     backgroundColour: "white",
-    chartCallback: (ChartJS) => {
-      // chart.js의 CJS 빌드는 `registerables` 번들을 내보내지 않으므로,
+    chartCallback: (ChartJS: any) => {
+      // chart.js의 CJS 빌드는 `registerables` 번들을 내보내지 않고, chartjs-node-canvas가
+      // 넘겨주는 인스턴스의 타입 선언도 등록 가능한 컴포넌트들을 포함하지 않으므로 any로 받는다.
       // chartjs-node-canvas가 내부에서 사용하는 것과 동일한 ChartJS 인스턴스에서
       // 필요한 컨트롤러/엘리먼트/플러그인을 직접 등록한다.
       ChartJS.register(

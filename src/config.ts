@@ -16,12 +16,6 @@ function required(name: string): string {
 }
 
 export const config = {
-  anthropic: {
-    get apiKey() {
-      return required("ANTHROPIC_API_KEY");
-    },
-    model: optional("CLAUDE_MODEL") ?? "claude-sonnet-5",
-  },
   naverAd: {
     get apiKey() {
       return required("NAVER_AD_API_KEY");

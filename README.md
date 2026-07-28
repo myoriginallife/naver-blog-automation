@@ -16,21 +16,28 @@
 ```
 1. keywords  : 시드 키워드 -> 네이버 검색광고 API로 연관 키워드 + 검색량 + 경쟁도 조회
                -> (선택) 블로그 문서수로 포화도 확인 -> 기회점수로 정렬
-2. draft     : 고른 키워드로 Claude API가 제목/메타설명/태그/본문 초안 생성
-3. chart     : 사용자가 입력한 실제 데이터로 차트 PNG 생성 (AI가 통계를 지어내지 않음)
-4. (수동)     post.md 검수 -> 네이버 블로그 편집기에 붙여넣기 -> 태그/이미지 삽입 -> "저장(비공개)"
+2. draft     : 고른 키워드로 글쓰기 프롬프트(prompt.txt) 생성 (API 호출 없음, 과금 없음)
+   (수동)     prompt.txt를 claude.ai 채팅 등에 붙여넣고, 답변을 response.txt로 저장
+3. save      : response.txt를 파싱해서 post.md / meta.json 생성
+4. chart     : 사용자가 입력한 실제 데이터로 차트 PNG 생성 (AI가 통계를 지어내지 않음)
+5. (수동)     post.md 검수 -> 네이버 블로그 편집기에 붙여넣기 -> 태그/이미지 삽입 -> "저장(비공개)"
 ```
 
-## 사전 준비물 (API 키 3종)
+글쓰기 단계는 Claude API를 직접 호출하지 않습니다. `draft`가 만들어주는 프롬프트를 여러분이 쓰는
+claude.ai 채팅(구독 중이면 추가 비용 없음)에 그대로 붙여넣고, 답변을 파일로 저장하면 `save`가
+`post.md`로 정리해줍니다. API 키를 발급받아 자동 호출하고 싶다면 `src/content/promptFile.ts`의
+프롬프트를 `@anthropic-ai/sdk` 등으로 직접 호출하도록 바꿔도 됩니다.
+
+## 사전 준비물 (API 키)
 
 | 키 | 용도 | 발급처 |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | 글 생성 | https://console.anthropic.com |
 | `NAVER_AD_API_KEY` / `NAVER_AD_SECRET_KEY` / `NAVER_AD_CUSTOMER_ID` | 키워드 검색량/경쟁도 | https://searchad.naver.com 광고주 가입 → **도구 > API 사용 관리**에서 API 라이선스/SECRET KEY 발급, CUSTOMER ID는 계정 정보에서 확인 |
 | `NAVER_OPENAPI_CLIENT_ID` / `NAVER_OPENAPI_CLIENT_SECRET` (선택) | 블로그 문서수로 키워드 경쟁(포화) 확인 | https://developers.naver.com/apps 애플리케이션 등록 → 검색 API 사용 설정 |
 
 네이버 검색광고 API 키가 없으면 `keywords`/`pipeline` 명령을 쓸 수 없습니다. 오픈API 키는
-선택 사항이며, 없으면 문서수 컬럼 없이 검색량/경쟁도만으로 점수를 계산합니다.
+선택 사항이며, 없으면 문서수 컬럼 없이 검색량/경쟁도만으로 점수를 계산합니다. **글쓰기(`draft`/
+`save`)는 어떤 API 키도 필요 없습니다.**
 
 ## 설치
 
@@ -69,16 +76,30 @@ npm run keywords -- --category investment --seed "미국 국채,금 투자" --to
 계산한 상대 지표입니다. 실제 애드포스트 단가는 키워드마다 다르며 이 점수에는 반영되지 않으니
 참고용으로만 쓰세요.
 
-### 2) 글 초안 생성
+### 2) 글쓰기 프롬프트 생성 → 채팅에서 답변 받기 → 저장
 
 ```bash
 npm run draft -- --keyword "전세자금대출 조건" --category real-estate \
   --related "버팀목전세자금,전세대출 한도"
 ```
 
-`output/posts/<날짜_키워드>/post.md`, `meta.json`이 생성됩니다. 본문에 확인되지 않은 수치는
-"공식 자료에서 확인하세요"처럼 자리표시 문구로 남기도록 프롬프트에 명시해뒀지만, **금리·세율·법령
-등은 발행 전 반드시 사람이 최신 정보로 직접 확인/수정**하세요.
+`output/posts/<날짜_키워드>/prompt.txt`가 생성됩니다. 안내에 따라:
+
+1. `prompt.txt` 내용 전체를 복사해 claude.ai 채팅(또는 쓰시는 Claude 채팅창)에 붙여넣습니다.
+2. 받은 답변 전체를 복사해서 `output/posts/<slug>/response.txt` 파일로 저장합니다.
+3. 아래 명령으로 `post.md` / `meta.json`을 만듭니다.
+
+```bash
+npm run save -- --slug 2026-07-27_전세자금대출-조건
+```
+
+`response.txt`는 프롬프트에 지정된 `===TITLE===` / `===META===` / `===TAGS===` /
+`===DISCLAIMER===` / `===BODY===` 마커 형식을 그대로 지켜야 파싱됩니다. 채팅이 형식을 깨서
+답하면 `save` 명령이 어느 마커가 빠졌는지 에러로 알려주니, 채팅에 "형식 그대로 다시 답해줘"라고
+요청해 다시 받으면 됩니다.
+
+본문에 확인되지 않은 수치는 "공식 자료에서 확인하세요"처럼 자리표시 문구로 남기도록 프롬프트에
+명시해뒀지만, **금리·세율·법령 등은 발행 전 반드시 사람이 최신 정보로 직접 확인/수정**하세요.
 
 ### 3) 차트 이미지 생성
 
@@ -103,14 +124,15 @@ npm run chart -- --slug 2026-07-27_전세자금대출-조건 \
 
 `type`은 `bar` / `line` / `pie` / `doughnut` 중 선택.
 
-### 4) 한 번에 (리서치 + 초안)
+### 4) 한 번에 (리서치 + 프롬프트 생성)
 
 ```bash
 npm run pipeline -- --category business --seed "정부 창업지원금"
 ```
 
-기회점수 1위 키워드로 바로 초안까지 생성합니다. 차트는 실제 데이터가 필요하므로 파이프라인에
-포함하지 않았습니다 — 필요하면 3번 명령을 별도로 실행하세요.
+기회점수 1위 키워드로 바로 `prompt.txt`까지 생성합니다(2번 단계와 동일하게 채팅에 붙여넣고
+`save`로 마무리). 차트는 실제 데이터가 필요하므로 파이프라인에 포함하지 않았습니다 — 필요하면
+3번 명령을 별도로 실행하세요.
 
 ## 네이버 블로그에 올리기 (수동)
 
@@ -138,7 +160,7 @@ npm run pipeline -- --category business --seed "정부 창업지원금"
 
 ```
 src/
-  cli.ts                 CLI 진입점 (keywords/draft/chart/pipeline)
+  cli.ts                 CLI 진입점 (keywords/draft/save/chart/pipeline)
   config.ts               환경변수 로딩
   types.ts                 공용 타입
   naver/
@@ -150,8 +172,9 @@ src/
     score.ts                  기회점수 계산
     research.ts                리서치 오케스트레이션
   content/
-    prompts.ts                시스템/유저 프롬프트
-    generate.ts                 Claude API 호출 (tool-use로 구조화된 결과 강제)
+    prompts.ts                시스템/유저 프롬프트 문구
+    promptFile.ts               채팅에 붙여넣을 프롬프트 전문(출력 형식 포함) 조립
+    parseResponse.ts             채팅 답변(response.txt)을 제목/본문 등으로 파싱
   charts/
     types.ts                    차트 데이터 스펙
     generate.ts                   chart.js + node-canvas로 PNG 렌더링
