@@ -39,7 +39,9 @@ function parseCompetition(value: string | undefined): CompetitionLevel {
 export async function fetchRelatedKeywords(
   hintKeywords: string[]
 ): Promise<RawKeywordStat[]> {
-  const seeds = hintKeywords.slice(0, 5);
+  // 네이버 검색광고 API는 키워드 내부에 공백이 있으면 400(hintKeywords 파라미터가
+  // 유효하지 않습니다)을 반환하므로, 사용자가 --seed에 공백 섞인 키워드를 넣어도 방어한다.
+  const seeds = hintKeywords.map((k) => k.replace(/\s+/g, "")).filter(Boolean).slice(0, 5);
   const query = new URLSearchParams({
     hintKeywords: seeds.join(","),
     showDetail: "1",
