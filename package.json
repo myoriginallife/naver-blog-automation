@@ -1,0 +1,33 @@
+{
+  "name": "naver-blog-automation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "경제/부동산/투자/사업 네이버 블로그 콘텐츠 자동화 CLI (키워드 리서치 -> SEO 초안 -> 차트 생성, 업로드는 수동)",
+  "type": "module",
+  "bin": {
+    "nba": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "keywords": "tsx src/cli.ts keywords",
+    "draft": "tsx src/cli.ts draft",
+    "chart": "tsx src/cli.ts chart",
+    "pipeline": "tsx src/cli.ts pipeline",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "chart.js": "^3.9.1",
+    "chartjs-node-canvas": "^4.1.6",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
